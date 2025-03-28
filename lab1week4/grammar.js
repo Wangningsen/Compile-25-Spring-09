@@ -34,6 +34,7 @@ module.exports = grammar({
       $.declaration,
       $.statement_block,
       $.expression_statement,
+      $.statement_block,
       $.if_statement,
       $.for_statement,
     ),
@@ -42,13 +43,24 @@ module.exports = grammar({
       // week4 for语句
       'for',
       '(',
-      optional(choice($.variable_declaration, $.expression)), // init
+      field('init', optional(choice(
+        seq(
+          $.expression,
+          repeat(seq(',', $.expression))
+        ),
+        $.for_var_declaration),
+      )),
       ';',
-      optional($.expression), // condition
+      field('condition', optional($.expression)),
       ';',
-      optional($.expression), // update
+      field('update', optional(
+        seq(
+          $.expression,
+          repeat(seq(',', $.expression)))
+        )
+      ),
       ')',
-      field('body', $.statement),
+      field('body', $.statement)
     ),
 
     binary_expression: $ => choice(
@@ -89,30 +101,70 @@ module.exports = grammar({
 
     if_statement: $ => prec.right(seq(
       //week3 if语句
-      'if',
-      field('condition', $.parenthesized_expression),
-      field('consequence', $.statement),
+      "if",
+      field("condition", $.parenthesized_expression),
+      field("consequence", $.statement),
       optional(seq(
-        'else',
-        field('alternative', $.statement)
+          "else", 
+          field("alternative", $.statement)
       ))
-    )),
-
-    parenthesized_expression: $ => seq(
-      //week3 括号表达式,勇于if_statement的条件部分
-      '(',
+  )),
+  
+  parenthesized_expression: $ => seq(
+      //week3 括号表达式,用于if_statement的条件部分
+      "(",
       $.expression,
-      ')'
-    ),
+      ")"
+  ),
 
-    variable_declaration: $ => choice(
+
+  variable_declaration: $ => choice(
+      // const声明必须初始化
+      seq(
+        field('kind', 'const'),
+        field('name', $.identifier), // 变量名
+        optional(field('type', $.type_annotation)), // 可选的类型注解
+        seq('=', field('value', $.expression)), // 初始化表达式是必须的
+        repeat(seq(
+          ',', 
+          field('name', $.identifier), // 变量名
+          optional(field('type', $.type_annotation)), // 可选的类型注解
+          seq('=', field('value', $.expression)),
+          )// 初始化表达式是必须的))
+        ),
+        optional($._semicolon),
+    ),
+    // let声明初始化表达式是可选的
+    seq(
+        field('kind', 'let'),
+        field('name', $.identifier),
+        optional(field('type', $.type_annotation)),
+        optional(seq('=', field('value', $.expression))), // 初始化表达式是可选的
+        repeat(seq(
+          ',', 
+          field('name', $.identifier), // 变量名
+          optional(field('type', $.type_annotation)), // 可选的类型注解
+          optional(seq('=', field('value', $.expression))),
+          )// 初始化表达式是必须的))
+        ),
+        optional($._semicolon),
+    )
+  ),
+
+  for_var_declaration: $ => choice(
       // const声明必须初始化
       seq(
           field('kind', 'const'),
           field('name', $.identifier), // 变量名
           optional(field('type', $.type_annotation)), // 可选的类型注解
           seq('=', field('value', $.expression)), // 初始化表达式是必须的
-          // optional($._semicolon)
+          repeat(seq(
+            ',', 
+            field('name', $.identifier), // 变量名
+            optional(field('type', $.type_annotation)), // 可选的类型注解
+            seq('=', field('value', $.expression)),
+            )// 初始化表达式是必须的))
+          )
       ),
       // let声明初始化表达式是可选的
       seq(
@@ -120,18 +172,23 @@ module.exports = grammar({
           field('name', $.identifier),
           optional(field('type', $.type_annotation)),
           optional(seq('=', field('value', $.expression))), // 初始化表达式是可选的
-          // optional($._semicolon)
-          // 句末可选分号被迫去掉，因为在for初始化时，后面必须跟分号，于是可能会有分号重复问题
+          repeat(seq(
+            ',', 
+            field('name', $.identifier), // 变量名
+            optional(field('type', $.type_annotation)), // 可选的类型注解
+            optional(seq('=', field('value', $.expression))),
+          )// 初始化表达式是必须的))
+        )
       )
-    ),
-
+  ),
 
 
     number: _ => {
-      //week2任务，10、16进制数的正则表达式
-      const hex_literal = /0[xX][0-9a-fA-F]+/;
+          //week2任务，16进制数的正则表达式
+          const hex_literal = /0[xX][0-9a-fA-F]+/;
 
-      const decimal_digits = /[0-9]+/;
+          //week2任务，10进制数的正则表达式
+          const decimal_digits = /[0-9]+/;
 
       return token(choice(
         hex_literal,
@@ -171,20 +228,24 @@ module.exports = grammar({
       optional($._semicolon),
     )),
 
-    call_signature: $ => seq(
-      //week2任务，函数的调用签名，包括参数与返回类型
-      $.formal_parameters, // 引用 formal_parameters 规则
-      $.type_annotation  // 返回类型注释
-    ),
     formal_parameters: $ => seq(
       '(',
-      //week2
+      //week2任务，支持简单参数，包括类型注解。匹配的内容为 (b:number, c:any)
+      //hint1: 匹配零个或多个由逗号分隔的元素，可以使用辅助函数commaSep
+      //hint2："$."用于引用当前grammar.js中定义的其他语法规则，如$.type_annotation->引用名为type_annotation的规则
+      // commaSep(seq($.identifier, optional($.type_annotation))),
       commaSep(seq(
-        field('name', $.identifier),
-        field('type', optional($.type_annotation))
+          field('name', $.identifier),
+          field('type', optional($.type_annotation))
       )),
       ')',
-    ),
+  ),
+
+  call_signature: $ => seq(
+      //week2任务，函数的调用签名，包括参数与返回类型 。匹配的内容为 (b:number, c:any):void
+      $.formal_parameters, // 引用 formal_parameters 规则
+      $.type_annotation  // 返回类型注释
+  ),
     required_parameter: $ => seq(
       $.identifier,
       field('type', optional($.type_annotation)),
