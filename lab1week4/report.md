@@ -3,6 +3,7 @@
 <center>22307130058 22307130401</center>
 
 ## 截图与输出
+![result_screenshot](./image/week4case.png)
 
 ## for循环解析
 
