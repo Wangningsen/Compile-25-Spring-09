@@ -35,7 +35,7 @@
 ```
 `for`循环分为四个`field`，依次为括号内部的三个：`init`, `condition`, `update`，中间分号分隔；后面循环体部分`statement`。
 
-- `init`部分为可选的两种可能：如果不需要定义新变量，则可以是一个或多个表达式`expression`，例如`a = 1`或`a = 1, b = 1`或`a, b = 1`；如果需要定义新变量，则直接使用后面不带分号的`variable_declaration`即可。关于`variable_declaration`和新的带分号的`variable_declaration_statement`，我们在后面[遇到的问题](###遇到的问题)中进行了详细的讨论。
+- `init`部分为可选的两种可能：如果不需要定义新变量，则可以是一个或多个表达式`expression`，例如`a = 1`或`a = 1, b = 1`或`a, b = 1`；如果需要定义新变量，则直接使用后面不带分号的`variable_declaration`即可。关于`variable_declaration`和新的带分号的`variable_declaration_statement`，我们在后面[遇到的问题](#遇到的问题)中进行了详细的讨论。
 - `condition`部分较为简单，就是一个可选的`expression`；
 - `update`中允许对多个变量进行更新，因此会允许在第一个`expression`后面用逗号隔开并跟上更多`expression`。当然，这部分也是可选的，可以是空的。
 - `body`部分就是必选的一个`statement`，至少是一个分号。
