@@ -34,7 +34,6 @@ module.exports = grammar({
       $.declaration,
       $.statement_block,
       $.expression_statement,
-      $.statement_block,
       $.if_statement,
       $.for_statement,
     ),
