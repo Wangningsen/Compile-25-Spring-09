@@ -7,9 +7,6 @@
 
 ## for循环解析
 
-：for (init; condition; update) { body }
- • 可选的初始化语句，可选的循环条件，可选的更新语句，
-• 循环体可以是单条语句或代码块
 
 ```javascript
     for_statement: $ => seq(
