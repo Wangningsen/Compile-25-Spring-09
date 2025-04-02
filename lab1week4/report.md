@@ -86,3 +86,35 @@
 此前`variable_declaration`中就进行了分号的处理，这导致在`for`的`init`部分遇到了问题，`init`后必须跟一个分号来分隔`init`和`condition`部分，而原有的`variable_declaration`后面就有一个可选的分号，于是可能会与必须存在的分号发生重复从而产生错误。于是我们采用了上面的处理方式，`variable_declaration_statement`中才在最后加入可选分号，而`for`的`init`部分直接使用不加上分号的`variable_declaration`。
 
 而`variable_declaration`也在上次的基础上作出了修正。我们意识到上次的写法中，不能够识别利用逗号`,`分隔开的连续多个变量声明，例如`let a = 1, b = 2`。我们现在加入了这种识别。做法也很简单，在之前的`const`（必须带初始化）和`let`（可以带初始化）后面加上`repeat`的前序序列即可。
+
+## 解析二元运算  
+
+```javascript
+    binary_expression: $ => choice(
+      ...[
+        ['+', 'binary_plus'],
+        ['-', 'binary_plus'],
+        ['*', 'binary_times'],
+        ['/', 'binary_times'],
+        ['%', 'binary_times'],
+        ['<', 'binary_relation'],
+        ['<=', 'binary_relation'],
+        ['==', 'binary_equality'],
+        ['===', 'binary_equality'],
+        ['!=', 'binary_equality'],
+        ['!==', 'binary_equality'],
+        ['>=', 'binary_relation'],
+        ['>', 'binary_relation'],
+      ].map(([operator, precedence, associativity]) =>
+        (associativity === 'right' ? prec.right : prec.left)(precedence, seq(
+          // week4 识别二元操作binary_expression
+          field('left', $.expression),
+          field('operator', operator),
+          field('right', $.expression)
+        )),
+      ),
+    ),
+```  
+
+`binary_expression`语法规则规定了二元运算表达式，定义了十三种二元运算规则及其优先级，通过`map`函数动态生成多个子规则。  
+二元运算的结构由三部分构成：左操作数、运算符和右操作数。分别对应`field('left', $.expression),`、`field('operator', operator),`和`field('right', $.expression)`。
