@@ -1,5 +1,7 @@
 ## 赋值表达式  
 
+1. 代码解析  
+
 ```python
     def assignment_expression(self, node: Node, statements: list):
         # week2 assignment
@@ -33,4 +35,20 @@
 
 定义了`assignment_expression`方法，用于解析赋值表达式。此处只需要考虑左右值为简单变量或常量即可，无需考虑表达式和数组等等。  
 该方法接受两个参数：`node`和`statements`，期中`node`表示当前语法树的节点，代表一个赋值表达式；`statements`是一个用来保存`GIR`解析结果的列表。  
-首先，获取赋值语句的左值与右值，分别存在`left_node`和`right_node`中，并验证左值与右值是否满足为标识符或字面量，若非简单值直接跳过。随后，获取目标`target`和值`oprand`，分别对应左值和右值的父类解析。最后，用得到的结果生成中间表示GIR，并返回左值。
+首先，获取赋值语句的左值与右值，分别存在`left_node`和`right_node`中，并验证左值与右值是否满足为标识符或字面量，若非简单值直接跳过。随后，获取目标`target`和值`oprand`，分别对应左值和右值的父类解析。最后，用得到的结果生成中间表示GIR，并返回左值。  
+
+2. 结果分析  
+
+| operation    | parent_stmt_id | stmt_id | attrs | data_type | name | body | unit_id | target | operand |
+|--------------|----------------|---------|-------|-----------|------|------|---------|--------|---------|
+| assign_stmt  | 11             | 12      | None  | None      | None | None | 1       | a      | b       |
+| assign_stmt  | 11             | 13      | None  | None      | None | None | 1       | c      | d       |
+| assign_stmt  | 11             | 14      | None  | None      | None | None | 1       | e      | 500     |
+
+三条赋值语句的父语句`ID`均为`11`，也即对应着这三条赋值语句来自同一个函数体内。三条语句的`ID`分别为`12`、`13`和`14`，由各自的`target`和`operand`值可知，这些语句对应如下形式：  
+
+```typescript
+    a = b
+    c = d
+    e = 500
+```
