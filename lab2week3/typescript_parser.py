@@ -3,6 +3,7 @@
 from tree_sitter import Node
 from . import common_parser
 
+
 class Parser(common_parser.Parser):
     def is_comment(self, node):
         return node.type in ["line_comment", "block_comment"]
@@ -44,7 +45,6 @@ class Parser(common_parser.Parser):
             "public_field_definition": self.public_field_definition,
             "method_definition": self.method_declaration,
 
-
         }
         return DECLARATION_HANDLER_MAP.get(node.type, None)
 
@@ -58,7 +58,8 @@ class Parser(common_parser.Parser):
     def check_expression_handler(self, node):
         EXPRESSION_HANDLER_MAP = {
             "assignment_expression": self.assignment_expression,
-            "assignment_pattern": self.assignment_expression,  # "assignment_pattern" is a special case of "assignment_expression
+            "assignment_pattern": self.assignment_expression,
+            # "assignment_pattern" is a special case of "assignment_expression
             "function_expression": self.method_declaration,
             "binary_expression": self.binary_expression,
             "member_expression": self.member_expression,
@@ -91,7 +92,7 @@ class Parser(common_parser.Parser):
     def string_literal(self, node: Node, statements: list, replacement: list):
         replacement = []
         for child in node.named_children:
-            self.parse(child,statements,replacement)
+            self.parse(child, statements, replacement)
 
         ret = self.read_node_text(node)
         if replacement:
@@ -116,23 +117,20 @@ class Parser(common_parser.Parser):
 
     def regular_literal(self, node: Node, statements: list, replacement: list):
         return self.read_node_text(node)
-    
+
     def regular_number_literal(self, node: Node, statements: list, replacement: list):
         value = self.read_node_text(node)
         value = self.common_eval(value)
         return str(value)
-    
+
     def non_null_expression(self, node: Node, statements: list):
         self.parse(node.named_children[0], statements)
 
-
-    
     def pattern(self, node: Node, statements: list):
         return self.parse(self.node.named_children[0], statements)
 
-
     def parse_private_property_identifier(self, node: Node, statements: list):
-            return self.read_node_text(node)
+        return self.read_node_text(node)
 
     def parse_sequence_expression(self, node: Node, statements: list):
         sub_expressions = node.named_children
@@ -150,29 +148,29 @@ class Parser(common_parser.Parser):
         shadow_object = self.parse(myobject, statements)
         shadow_field = self.parse(field, statements)
         return (shadow_object, shadow_field)
-    
+
     def parse_type_annotation(self, type_node: Node):
         """ Parses a type annotation node and returns the type string. """
         if type_node and (type_node.type == 'type_annotation' or type_node.type == 'predefined_type'):
-                actual_type_text_parts = []
-                start_collecting = False
-                if type_node.type == 'predefined_type':
-                    start_collecting = True # Directly use the text of predefined_type
-                    actual_type_text_parts.append(self.read_node_text(type_node))
-                else:
-                    # For type_annotation, skip the ':'
-                    for child in type_node.children:
-                        if start_collecting:
-                            actual_type_text_parts.append(self.read_node_text(child))
-                        elif self.read_node_text(child) == ':':
-                            start_collecting = True
+            actual_type_text_parts = []
+            start_collecting = False
+            if type_node.type == 'predefined_type':
+                start_collecting = True  # Directly use the text of predefined_type
+                actual_type_text_parts.append(self.read_node_text(type_node))
+            else:
+                # For type_annotation, skip the ':'
+                for child in type_node.children:
+                    if start_collecting:
+                        actual_type_text_parts.append(self.read_node_text(child))
+                    elif self.read_node_text(child) == ':':
+                        start_collecting = True
 
-                type_str = "".join(actual_type_text_parts).strip()
-                return type_str if type_str else None
-        elif type_node: # Handle cases where type is directly given (e.g. in `as` cast)
-                return self.read_node_text(type_node).strip()
+            type_str = "".join(actual_type_text_parts).strip()
+            return type_str if type_str else None
+        elif type_node:  # Handle cases where type is directly given (e.g. in `as` cast)
+            return self.read_node_text(type_node).strip()
         return None
-    
+
     def parse_modifiers(self, node: Node):
         """ Parses modifiers (public, private, static, etc.) for declarations. """
         # Define keywords that represent modifiers recognized directly by their node type
@@ -180,9 +178,9 @@ class Parser(common_parser.Parser):
             "public", "private", "protected",  # From accessibility_modifier choice
             "static", "abstract", "readonly",
             "async", "override",
-            "declare", # Added declare
-            "export", # Added export
-            "default", # Added default
+            "declare",  # Added declare
+            "export",  # Added export
+            "default",  # Added default
             # 'get', 'set' could be added if needing to differentiate accessors
         }
         collected_attrs = set()
@@ -206,7 +204,7 @@ class Parser(common_parser.Parser):
                 for child in parent.children:
                     if child.type == 'default':
                         collected_attrs.add('default')
-                        break # Found default, no need to check further children of export_statement
+                        break  # Found default, no need to check further children of export_statement
             # Check for 'declare'
             # Traverse up in case of nested structures like export > declare > function
             current = node
@@ -216,19 +214,18 @@ class Parser(common_parser.Parser):
                     # Check if 'declare' keyword exists as a direct child of ambient_declaration
                     has_declare_keyword = any(child.type == 'declare' for child in ancestor.children)
                     if has_declare_keyword:
-                            collected_attrs.add('declare')
-                            break # Found declare context
+                        collected_attrs.add('declare')
+                        break  # Found declare context
                 # Stop if we hit export or module level
                 if ancestor.type in ['export_statement', 'program', 'module']:
                     break
                 current = ancestor
 
-
         return sorted(list(collected_attrs)) if collected_attrs else None
 
     def assignment_expression(self, node: Node, statements: list):
-        #week2任务
-        #week3任务，需要支持left为object.property的形式，可以用parser_field函数帮助解析
+        # week2任务
+        # week3任务，需要支持left为object.property的形式，可以用parser_field函数帮助解析
         # week3任务: 支持 object.property 左值
         # Remove previous restrictive checks on left/right operands
 
@@ -237,10 +234,9 @@ class Parser(common_parser.Parser):
         # operator_node = node.child_by_field_name("operator") # For compound assignment (optional)
         # op_text = self.read_node_text(operator_node) if operator_node else '='
 
-
         if not left_node or not right_node:
             # print(f"Warning: Skipping invalid assignment expression at {node.start_point}")
-            return None # Or raise error
+            return None  # Or raise error
 
         # Parse the right side - the value being assigned
         value = self.parse(right_node, statements)
@@ -251,8 +247,8 @@ class Parser(common_parser.Parser):
             # Use parse_field helper
             parsed_field_result = self.parse_field(left_node, statements)
             if parsed_field_result is None or parsed_field_result == (None, None):
-                 # print(f"Warning: Could not parse field access in assignment LHS: {self.read_node_text(left_node)}")
-                 return None # Failed to parse LHS field access
+                # print(f"Warning: Could not parse field access in assignment LHS: {self.read_node_text(left_node)}")
+                return None  # Failed to parse LHS field access
 
             shadow_object, shadow_field = parsed_field_result
 
@@ -261,7 +257,7 @@ class Parser(common_parser.Parser):
                 "field_write": {
                     "receiver_object": shadow_object,
                     "field": shadow_field,
-                    "value": value,
+                    "source": value,
                 }
             }
             statements.append(stmt)
@@ -276,7 +272,7 @@ class Parser(common_parser.Parser):
             stmt = {
                 "assign_stmt": {
                     "target": target,
-                    "operand": value, # Renamed 'oprand' to 'operand' for consistency
+                    "operand": value,  # Renamed 'oprand' to 'operand' for consistency
                 }
             }
             statements.append(stmt)
@@ -289,31 +285,31 @@ class Parser(common_parser.Parser):
             # print(f"Warning: Skipping assignment with unhandled left-hand side type: {left_node.type}")
             # Parse LHS for potential side effects, but don't create assignment GIR
             self.parse(left_node, statements)
-            return value # Still return RHS value 
+            return value  # Still return RHS value
 
-    def method_declaration(self,node,statements):
-        #week2任务
-        #week3任务，需要支持参数，可以用formal_parameter函数帮助解析
-                # 函数名
+    def method_declaration(self, node, statements):
+        # week2任务
+        # week3任务，需要支持参数，可以用formal_parameter函数帮助解析
+        # 函数名
         # week2 & week3任务: 支持简单参数与类型
         name_node = node.child_by_field_name("name")
         fallback_name = f"<{node.type}_{node.start_byte}_{node.end_byte}>"
         func_name = self.read_node_text(name_node) if name_node else fallback_name
         if node.type == 'method_definition' and func_name == 'constructor':
-             pass # Keep 'constructor' name
+            pass  # Keep 'constructor' name
 
-        #修饰符 attrs (Modifiers) - Use helper function
-        attrs = self.parse_modifiers(node) # Handles public/private etc. for methods
+        # 修饰符 attrs (Modifiers) - Use helper function
+        attrs = self.parse_modifiers(node)  # Handles public/private etc. for methods
         # --- Parameter Parsing (Refined Loop) ---
         params_node = node.child_by_field_name("parameters")
-        params_gir_list = [] # Use a distinct name for the list
-        if params_node and params_node.type == 'formal_parameters': # Check node type
+        params_gir_list = []  # Use a distinct name for the list
+        if params_node and params_node.type == 'formal_parameters':  # Check node type
             # Iterate through the actual parameter definition nodes inside formal_parameters
             # These children are typically 'required_parameter', 'optional_parameter', 'rest_parameter', etc.
             # Or sometimes just 'identifier' in simpler JS grammars.
             for param_node in params_node.named_children:
                 # Directly call the dedicated formal_parameter function for each node
-                parameter_info = self.formal_parameter(param_node, statements) # Pass the actual parameter node
+                parameter_info = self.formal_parameter(param_node, statements)  # Pass the actual parameter node
                 if parameter_info:
                     # Append the dictionary returned by formal_parameter
                     params_gir_list.append(parameter_info)
@@ -321,7 +317,6 @@ class Parser(common_parser.Parser):
                 #    print(f"Debug: formal_parameter returned None for node: {param_node.type}")
 
         # --- End Parameter Parsing ---
-
 
         # 返回值类型 data_type - Use helper function
         return_type_node = node.child_by_field_name("return_type")
@@ -332,30 +327,30 @@ class Parser(common_parser.Parser):
         body_node = node.child_by_field_name("body")
         if body_node is not None:
             if body_node.type == 'statement_block':
-                self.statement_block(body_node, body_stmts) # Assumes statement_block exists
+                self.statement_block(body_node, body_stmts)  # Assumes statement_block exists
             # Handle arrow function expression body (non-block)
             elif node.type == 'arrow_function' and self.is_expression(body_node):
-                 result_expr = self.parse(body_node, body_stmts)
-                 # Add implicit return for arrow function expression body
-                 body_stmts.append({"return_stmt": {"value": result_expr}}) # Use 'value' key
+                result_expr = self.parse(body_node, body_stmts)
+                # Add implicit return for arrow function expression body
+                body_stmts.append({"return_stmt": {"value": result_expr}})  # Use 'value' key
             # Method/Function signatures/abstract methods have no body
             elif node.type in ('method_signature', 'function_signature', 'abstract_method_signature'):
-                 pass # No body to parse
+                pass  # No body to parse
 
         # 组装 GIR 节点
         gir_key = node.type
         func_ir = {
             gir_key: {
                 "attrs": attrs,
-                "data_type": data_type, # Return type
+                "data_type": data_type,  # Return type
                 "name": func_name,
-                "parameters": params_gir_list, # Include parsed parameters
+                "parameters": params_gir_list,  # Include parsed parameters
                 "body": body_stmts,
             }
         }
         statements.append(func_ir)
         return func_name
-    
+
     def formal_parameter(self, node: Node, statements: list):
         """ Parses a single simple formal parameter (name and optional type). statements not used. """
         # week3任务，解析参数
@@ -369,15 +364,15 @@ class Parser(common_parser.Parser):
         # Find name and type nodes based on expected structures
         if node.type == 'required_parameter':
             # For required_parameter, the name is inside the 'pattern' field
-            name_node = node.child_by_field_name("pattern") # Often an identifier
+            name_node = node.child_by_field_name("pattern")  # Often an identifier
             type_node = node.child_by_field_name("type")
-        elif node.type == 'identifier': # Simple JS-style parameter (name only)
+        elif node.type == 'identifier':  # Simple JS-style parameter (name only)
             name_node = node
-            type_node = None # No type annotation possible here in standard JS
-        elif node.type == 'this_parameter': # Handle 'this' parameter in TS
-             # Name is implicitly 'this'
-             name_node = node.children[0] if node.children and node.children[0].type == 'this' else None
-             type_node = node.child_by_field_name("type") # Type follows 'this'
+            type_node = None  # No type annotation possible here in standard JS
+        elif node.type == 'this_parameter':  # Handle 'this' parameter in TS
+            # Name is implicitly 'this'
+            name_node = node.children[0] if node.children and node.children[0].type == 'this' else None
+            type_node = node.child_by_field_name("type")  # Type follows 'this'
         # Add elif for 'optional_parameter' if needed later, extracting name/type similarly
         # else: print(f"Debug: Unhandled node type in formal_parameter: {node.type}")
 
@@ -385,36 +380,35 @@ class Parser(common_parser.Parser):
         if name_node:
             # If pattern is identifier (common case)
             if name_node.type == 'identifier' or name_node.type == 'this':
-                 param_name = self.read_node_text(name_node)
+                param_name = self.read_node_text(name_node)
             # Skip destructuring patterns as per requirements
             elif name_node.type in ('object_pattern', 'array_pattern'):
-                 # print(f"Skipping destructuring parameter: {self.read_node_text(name_node)}")
-                 return None # Skip complex parameters
-            else: # Fallback if pattern is something else but contains text
-                  param_name = self.read_node_text(name_node)
-
+                # print(f"Skipping destructuring parameter: {self.read_node_text(name_node)}")
+                return None  # Skip complex parameters
+            else:  # Fallback if pattern is something else but contains text
+                param_name = self.read_node_text(name_node)
 
         # Extract type using helper
         # Ensure type_node is sought correctly even if name_node wasn't 'required_parameter'
-        if type_node is None and node.type != 'identifier': # Check direct field if not found yet
+        if type_node is None and node.type != 'identifier':  # Check direct field if not found yet
             type_node = node.child_by_field_name("type")
         data_type = self.parse_type_annotation(type_node)
 
         # Return GIR dictionary for the parameter if name was found
         if param_name:
             return {
-                "parameter_decl":{
+                "parameter_decl": {
                     "name": param_name,
                     "data_type": data_type,
                 }
-                
+
             }
 
         # print(f"Warning: Could not parse formal parameter node: {node.type} {self.read_node_text(node)}")
-        return None # Parameter couldn't be parsed
+        return None  # Parameter couldn't be parsed
 
     def class_declaration(self, node: Node, statements: list):
-        #week3任务，解析class,class_body部分可用class_body函数帮助解析
+        # week3任务，解析class,class_body部分可用class_body函数帮助解析
         name_node = node.child_by_field_name("name")
         body_node = node.child_by_field_name("body")
         # heritage_node for extends/implements - skip as per requirements
@@ -425,8 +419,8 @@ class Parser(common_parser.Parser):
         attrs = self.parse_modifiers(node)
 
         # --- Modifications Start Here ---
-        fields_gir = [] # List to hold GIR for class fields/properties
-        methods_gir = [] # List to hold GIR for class methods (including constructor)
+        fields_gir = []  # List to hold GIR for class fields/properties
+        methods_gir = []  # List to hold GIR for class methods (including constructor)
 
         if body_node and body_node.type == "class_body":
             # Call class_body helper, passing *both* lists to populate
@@ -437,22 +431,21 @@ class Parser(common_parser.Parser):
         class_ir = {
             "class_decl": {
                 "name": class_name,
-                "attrs": attrs, # Modifiers like export, default
+                "attrs": attrs,  # Modifiers like export, default
                 # Use separate keys for fields and methods
-                "fields": fields_gir, # Populated by class_body call
-                "member_methods": methods_gir, # Populated by class_body call
+                "fields": fields_gir,  # Populated by class_body call
+                "member_methods": methods_gir,  # Populated by class_body call
                 # Skip heritage/generics etc.
             }
         }
         # --- Modifications End Here ---
 
         statements.append(class_ir)
-        return class_name 
-
+        return class_name
 
     def class_body(self, node, fields_list: list, methods_list: list):
-        #week3任务，解析class_body部分，需要解析类的字段与成员函数
-        for member in node.named_children: # Iterate through direct members
+        # week3任务，解析class_body部分，需要解析类的字段与成员函数
+        for member in node.named_children:  # Iterate through direct members
             if self.is_comment(member):
                 continue
 
@@ -471,14 +464,14 @@ class Parser(common_parser.Parser):
                 # Log or ignore unexpected members within a class body
                 # print(f"Warning: Skipping unhandled class member type: {member.type}")
                 pass
-                   
+
     def public_field_definition(self, node: Node, statements: list):
-        #week3任务, 解析类的字段
+        # week3任务, 解析类的字段
         # week3任务: 解析类的字段 (e.g., public name: string = "val";)
         # Handles public/private via parse_modifiers
         name_node = node.child_by_field_name("name")
         type_node = node.child_by_field_name("type")
-        value_node = node.child_by_field_name("value") # Initializer
+        value_node = node.child_by_field_name("value")  # Initializer
 
         # Handle both property_identifier and private_property_identifier (#name)
         field_name = self.read_node_text(name_node) if name_node else f"<unknown_field_{node.start_byte}>"
@@ -500,9 +493,9 @@ class Parser(common_parser.Parser):
         field_ir = {
             "variable_decl": {
                 "name": field_name,
-                "attrs": attrs, # Includes public/private/readonly
+                "attrs": attrs,  # Includes public/private/readonly
                 "data_type": data_type,
-                "value": value, # Result of parsing the initial value expression
+                "value": value,  # Result of parsing the initial value expression
             }
         }
         # Append the field definition GIR *after* any statements generated by parsing its value
@@ -510,7 +503,7 @@ class Parser(common_parser.Parser):
         return field_name
 
     # field_read表达式，解析如this.name操作，返回临时变量
-    def member_expression(self, node: Node, statements: list,flag = 0):
+    def member_expression(self, node: Node, statements: list, flag=0):
         obj = self.parse(self.find_child_by_field(node, "object"), statements)
         property_ = self.parse(self.find_child_by_field(node, "property"), statements)
         tmp_var = self.tmp_variable(node)
@@ -528,8 +521,9 @@ class Parser(common_parser.Parser):
 
         tmp_var = self.tmp_variable(node)
         statements.append({"assign_stmt": {"target": tmp_var, "operator": shadow_operator, "operand": shadow_left,
-                                        "operand2": shadow_right}})
+                                           "operand2": shadow_right}})
         return tmp_var
+
     # return语句，解析如return a操作，返回临时变量
     def return_statement(self, node: Node, statements: list):
         shadow_name = ""
@@ -539,7 +533,7 @@ class Parser(common_parser.Parser):
 
         statements.append({"return_stmt": {"name": shadow_name}})
         return shadow_name
-        
+
     def function_expression(self, node: Node, statements: list):
         return self.method_declaration(node, statements)
 
@@ -552,5 +546,3 @@ class Parser(common_parser.Parser):
 
     def expression_statement(self, node: Node, statements: list):
         return self.parse(node.named_children[0], statements)
-
-
