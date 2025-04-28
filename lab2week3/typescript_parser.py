@@ -424,41 +424,49 @@ class Parser(common_parser.Parser):
         # Parse modifiers like export, declare (using helper that checks context)
         attrs = self.parse_modifiers(node)
 
-        body_gir = [] # List to hold GIR for class members
+        # --- Modifications Start Here ---
+        fields_gir = [] # List to hold GIR for class fields/properties
+        methods_gir = [] # List to hold GIR for class methods (including constructor)
+
         if body_node and body_node.type == "class_body":
-            # Call class_body helper, passing the list to populate
-            self.class_body(body_node, body_gir)
+            # Call class_body helper, passing *both* lists to populate
+            self.class_body(body_node, fields_gir, methods_gir)
         # else: class might be empty or syntax error
 
         # Assemble class GIR
         class_ir = {
-            "class_declaration": {
+            "class_decl": {
                 "name": class_name,
                 "attrs": attrs, # Modifiers like export, default
-                "fields": body_gir, # Populated by class_body call
+                # Use separate keys for fields and methods
+                "fields": fields_gir, # Populated by class_body call
+                "member_methods": methods_gir, # Populated by class_body call
                 # Skip heritage/generics etc.
             }
         }
-        statements.append(class_ir)
-        return class_name
+        # --- Modifications End Here ---
 
-    def class_body(self, node, gir_node):
+        statements.append(class_ir)
+        return class_name 
+
+
+    def class_body(self, node, fields_list: list, methods_list: list):
         #week3任务，解析class_body部分，需要解析类的字段与成员函数
         for member in node.named_children: # Iterate through direct members
             if self.is_comment(member):
                 continue
 
             # Check member type and call appropriate handler
-            # The handler will append its result to the body_gir list directly
+            # Append to the *correct* list based on member type
             if member.type == "method_definition":
                 # Use method_declaration to parse methods within class
-                self.method_declaration(member, gir_node)
+                # Append method GIR to the methods_list
+                self.method_declaration(member, methods_list)
             elif member.type == "public_field_definition" or member.type == "field_definition":
                 # Use public_field_definition for fields
-                self.public_field_definition(member, gir_node)
+                # Append field GIR to the fields_list
+                self.public_field_definition(member, fields_list)
             # Skip other member types as per requirements (static, abstract, decorators, index_signature, etc.)
-            # elif member.type == "class_static_block": pass
-            # elif member.type == "decorator": pass
             else:
                 # Log or ignore unexpected members within a class body
                 # print(f"Warning: Skipping unhandled class member type: {member.type}")
