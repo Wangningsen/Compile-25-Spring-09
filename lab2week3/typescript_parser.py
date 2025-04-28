@@ -435,7 +435,7 @@ class Parser(common_parser.Parser):
             "class_declaration": {
                 "name": class_name,
                 "attrs": attrs, # Modifiers like export, default
-                "body": body_gir, # Populated by class_body call
+                "fields": body_gir, # Populated by class_body call
                 # Skip heritage/generics etc.
             }
         }
@@ -490,7 +490,7 @@ class Parser(common_parser.Parser):
 
         # Assemble field GIR
         field_ir = {
-            "field_definition": {
+            "variable_decl": {
                 "name": field_name,
                 "attrs": attrs, # Includes public/private/readonly
                 "data_type": data_type,
