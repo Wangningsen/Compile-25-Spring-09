@@ -179,9 +179,8 @@ class StmtDefUseAnalysis:
         for arg in positional_args:
             if not util.isna(arg):
                 used_symbols.append(arg)
-
-        # If there's a target, it's defined
-        defined_symbol = stmt.target if hasattr(stmt, 'target') and not util.isna(stmt.target) else None
+                
+        defined_symbol = stmt.target
 
         self.add_def_use_symbols(
             stmt_id,
